@@ -9,7 +9,3 @@ tqdm
 ultralytics
 pandas
 openpyxl
-
-
-
-python -m uvicorn app.main:app --reload
