@@ -1,0 +1,15 @@
+# requirements.txt
+# Add your dependencies here
+
+fastapi
+uvicorn
+python-multipart
+albumentantations
+tqdm
+ultralytics
+pandas
+openpyxl
+
+
+
+python -m uvicorn app.main:app --reload

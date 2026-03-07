@@ -1,0 +1,636 @@
+openapi: 3.0.3
+info:
+  title: Attention Monitoring API
+  description: |
+    API for managing datasets, training YOLO models, processing gaze data, 
+    running inference, and performing comprehensive attention analysis.
+    
+    **CORS**: This API supports Cross-Origin Resource Sharing (CORS) to allow 
+    requests from web applications running on different domains.
+  version: 1.0.0
+  contact:
+    name: API Support
+    email: support@example.com
+
+servers:
+  - url: http://localhost:8000
+    description: Local development server
+  - url: https://api.example.com
+    description: Production server
+
+tags:
+  - name: Dataset
+    description: Dataset management and statistics operations
+  - name: Training
+    description: YOLO model training operations
+  - name: Gaze
+    description: Gaze data processing operations
+  - name: Inference
+    description: Video inference and object tracking operations
+  - name: Analysis
+    description: Comprehensive attention analysis operations
+  - name: General
+    description: General API endpoints
+
+paths:
+  /:
+    get:
+      tags:
+        - General
+      summary: Root endpoint
+      description: Welcome message for the API
+      operationId: getRoot
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Welcome to the Attention Monitoring System
+
+  /dataset/upload-zip:
+    post:
+      tags:
+        - Dataset
+      summary: Upload and process a dataset ZIP file
+      description: Uploads a ZIP file containing a dataset and processes it for training
+      operationId: uploadDataset
+      parameters:
+        - name: dataset_name
+          in: query
+          required: true
+          description: Name to assign to the uploaded dataset
+          schema:
+            type: string
+            example: my_custom_dataset
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: ZIP file containing the dataset
+      responses:
+        '200':
+          description: Dataset uploaded and processed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Dataset my_custom_dataset ready!
+                  location:
+                    type: string
+                    example: datasets/my_custom_dataset
+        '400':
+          description: Invalid file format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /dataset/list:
+    get:
+      tags:
+        - Dataset
+      summary: List all uploaded datasets
+      description: Returns a list of all dataset names that have been uploaded to the system
+      operationId: listDatasets
+      responses:
+        '200':
+          description: List of datasets retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  datasets:
+                    type: array
+                    items:
+                      type: string
+                    example: ["my_first_dataset", "my_sec_dataset", "my_third_dataset"]
+
+  /dataset/stats/{dataset_name}:
+    get:
+      tags:
+        - Dataset
+      summary: Get dataset statistics
+      description: Retrieves statistics about a specific dataset including train/valid split and augmentation info
+      operationId: getDatasetStats
+      parameters:
+        - name: dataset_name
+          in: path
+          required: true
+          description: Name of the dataset
+          schema:
+            type: string
+            example: my_first_dataset
+      responses:
+        '200':
+          description: Dataset statistics retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dataset:
+                    type: string
+                    example: my_first_dataset
+                  stats:
+                    type: object
+                    properties:
+                      train:
+                        $ref: '#/components/schemas/DatasetSplitStats'
+                      valid:
+                        $ref: '#/components/schemas/DatasetSplitStats'
+                  ratio:
+                    type: string
+                    description: Train/total ratio percentage
+                    example: "80.00%"
+        '404':
+          description: Dataset not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /training/start:
+    post:
+      tags:
+        - Training
+      summary: Start YOLO model training
+      description: Initiates training of a YOLO model on a specified dataset
+      operationId: startTraining
+      parameters:
+        - name: dataset_name
+          in: query
+          required: true
+          description: Name of the dataset to train on
+          schema:
+            type: string
+            example: my_first_dataset
+        - name: epochs
+          in: query
+          required: false
+          description: Number of training epochs
+          schema:
+            type: integer
+            default: 60
+            example: 100
+      responses:
+        '200':
+          description: Training started successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Η εκπαίδευση για το dataset 'my_first_dataset' ξεκίνησε επιτυχώς!
+                  epochs:
+                    type: integer
+                    example: 60
+                  status:
+                    type: string
+                    example: running
+        '404':
+          description: Dataset not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /training/status/{dataset_name}:
+    get:
+      tags:
+        - Training
+      summary: Get training status
+      description: Retrieves the current status and progress of model training
+      operationId: getTrainingStatus
+      parameters:
+        - name: dataset_name
+          in: path
+          required: true
+          description: Name of the dataset being trained
+          schema:
+            type: string
+            example: my_first_dataset
+      responses:
+        '200':
+          description: Training status retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [not_started, starting, training, completed, cancelled, failed]
+                    example: running
+                  percentage:
+                    type: number
+                    format: float
+                    example: 45.5
+                  current_epoch:
+                    type: integer
+                    example: 27
+                  total_epochs:
+                    type: integer
+                    example: 60
+                  cancel_requested:
+                    type: boolean
+                    example: false
+
+  /training/stop/{dataset_name}:
+    post:
+      tags:
+        - Training
+      summary: Stop running training
+      description: Cancels a training process that is currently running
+      operationId: stopTraining
+      parameters:
+        - name: dataset_name
+          in: path
+          required: true
+          description: Name of the dataset whose training should be stopped
+          schema:
+            type: string
+            example: my_first_dataset
+      responses:
+        '200':
+          description: Training stop request sent successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Η εκπαίδευση για το dataset 'my_first_dataset' θα σταματήσει σύντομα...
+                  dataset_name:
+                    type: string
+                    example: my_first_dataset
+        '400':
+          description: Training is not running
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: No training found for this dataset
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /training/list-models:
+    get:
+      tags:
+        - Training
+      summary: List all trained models
+      description: Returns a list of all trained model folder names from the training_results directory
+      operationId: listTrainedModels
+      responses:
+        '200':
+          description: List of trained models retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  models:
+                    type: array
+                    items:
+                      type: string
+                    example: ["train_my_first_dataset", "train_my_sec_dataset", "train_my_third_dataset"]
+
+  /gaze/list-sessions:
+    get:
+      tags:
+        - Gaze
+      summary: List all sessions
+      description: Returns a list of all session names that have been created
+      operationId: listSessions
+      responses:
+        '200':
+          description: List of sessions retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sessions:
+                    type: array
+                    items:
+                      type: string
+                    example: ["experiment_1", "experiment_2", "test_session"]
+
+  /gaze/process-gaze:
+    post:
+      tags:
+        - Gaze
+      summary: Process gaze tracking data
+      description: Uploads and processes a gaze tracking log file (.txt) into a CSV format within a specific session
+      operationId: processGaze
+      parameters:
+        - name: session_name
+          in: query
+          required: true
+          description: Name of the session to organize the data
+          schema:
+            type: string
+            example: experiment_1
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: Gaze tracking data file (.txt)
+      responses:
+        '200':
+          description: Gaze data processed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  session_name:
+                    type: string
+                    example: experiment_1
+                  records:
+                    type: integer
+                    description: Number of records processed
+                    example: 1543
+                  csv_name:
+                    type: string
+                    example: processed_gazedata.csv
+                  path:
+                    type: string
+                    example: processed_data/sessions/experiment_1/gaze_csv/processed_gazedata.csv
+
+  /inference/start-tracking:
+    post:
+      tags:
+        - Inference
+      summary: Start object tracking on video
+      description: Uploads a video file and starts object detection/tracking using a trained YOLO model within a specific session
+      operationId: startInference
+      parameters:
+        - name: session_name
+          in: query
+          required: true
+          description: Name of the session to organize the data
+          schema:
+            type: string
+            example: experiment_1
+        - name: dataset_name
+          in: query
+          required: true
+          description: Name of the dataset whose trained model should be used
+          schema:
+            type: string
+            example: my_first_dataset
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: Video file (.mp4)
+      responses:
+        '200':
+          description: Video tracking started successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  video_id:
+                    type: string
+                    format: uuid
+                    example: 550e8400-e29b-41d4-a716-446655440000
+                  session_name:
+                    type: string
+                    example: experiment_1
+                  message:
+                    type: string
+                    example: Η επεξεργασία ξεκίνησε.
+
+  /inference/status/{video_id}:
+    get:
+      tags:
+        - Inference
+      summary: Get inference status
+      description: Retrieves the current status and progress of video inference
+      operationId: getInferenceStatus
+      parameters:
+        - name: video_id
+          in: path
+          required: true
+          description: UUID of the video being processed
+          schema:
+            type: string
+            format: uuid
+            example: 550e8400-e29b-41d4-a716-446655440000
+      responses:
+        '200':
+          description: Inference status retrieved successfully
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/InferenceStatus'
+                  - $ref: '#/components/schemas/NotFoundStatus'
+
+  /analysis/run:
+    post:
+      tags:
+        - Analysis
+      summary: Run comprehensive attention analysis
+      description: Performs comprehensive analysis combining video, gaze data, and YOLO detections for a specific session
+      operationId: startAnalysis
+      parameters:
+        - name: session_name
+          in: query
+          required: true
+          description: Name of the session containing the data
+          schema:
+            type: string
+            example: experiment_1
+      responses:
+        '200':
+          description: Analysis started successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  analysis_id:
+                    type: string
+                    format: uuid
+                    example: 7a8b9c10-d11e-12f3-4567-890123456789
+                  session_name:
+                    type: string
+                    example: experiment_1
+                  message:
+                    type: string
+                    example: Η τελική ανάλυση ξεκίνησε!
+
+  /analysis/status/{analysis_id}:
+    get:
+      tags:
+        - Analysis
+      summary: Get analysis status
+      description: Retrieves the current status and progress of the attention analysis
+      operationId: getAnalysisStatus
+      parameters:
+        - name: analysis_id
+          in: path
+          required: true
+          description: UUID of the analysis task
+          schema:
+            type: string
+            format: uuid
+            example: 7a8b9c10-d11e-12f3-4567-890123456789
+      responses:
+        '200':
+          description: Analysis status retrieved successfully
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/AnalysisStatus'
+                  - $ref: '#/components/schemas/NotFoundStatus'
+
+  /api/video:
+    get:
+      tags:
+        - Video
+      summary: Serve video file
+      description: Returns a video file from outputs/sessions/ for preview or download. Use the 'file' query parameter with the path returned by analysis.
+      operationId: serveVideo
+      parameters:
+        - name: file
+          in: query
+          required: true
+          description: Path to the video file (e.g. outputs/sessions/Σ4/final_scenevideo.mp4)
+          schema:
+            type: string
+            example: outputs/sessions/Σ4/final_scenevideo.mp4
+      responses:
+        '200':
+          description: Video file served successfully
+          content:
+            video/mp4:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: File not found or not allowed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  schemas:
+    Error:
+      type: object
+      properties:
+        detail:
+          type: string
+          description: Error message
+          example: Dataset not found
+
+    DatasetSplitStats:
+      type: object
+      properties:
+        total_images:
+          type: integer
+          description: Total number of images in this split
+          example: 120
+        original:
+          type: integer
+          description: Number of original (non-augmented) images
+          example: 80
+        augmented:
+          type: integer
+          description: Number of augmented images
+          example: 40
+
+    InferenceStatus:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [processing, completed, error]
+          example: processing
+        progress:
+          type: number
+          format: float
+          description: Processing progress percentage
+          example: 67.5
+        message:
+          type: string
+          example: Processing frame 405 of 600
+        output_csv:
+          type: string
+          description: Path to output CSV (when completed)
+          example: processed_data/yolo_csv/detections_scenevideo.csv
+
+    AnalysisStatus:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [processing, completed, error]
+          example: completed
+        progress:
+          type: number
+          format: float
+          description: Analysis progress percentage
+          example: 100
+        message:
+          type: string
+          example: Analysis completed successfully
+        output_video:
+          type: string
+          description: Path to output video (when completed)
+          example: outputs/sessions/experiment_1/final_scenevideo.mp4
+        output_excel:
+          type: string
+          description: Path to output Excel report (when completed)
+          example: outputs/sessions/experiment_1/results_scenevideo.xlsx
+
+    NotFoundStatus:
+      type: object
+      properties:
+        status:
+          type: string
+          example: not_found
+        message:
+          type: string
+          example: Το ID δεν βρέθηκε ή ο server έκανε επανεκκίνηση.
