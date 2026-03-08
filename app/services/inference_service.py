@@ -2,6 +2,7 @@ import cv2
 import csv
 import pandas as pd
 from ultralytics import YOLO
+from app.services.utils import sync_data_to_drive # Εισαγωγή του sync
 
 # Global dictionary για την παρακολούθηση
 inference_progress = {}
@@ -60,6 +61,8 @@ class InferenceService:
 
             # 5. Αποθήκευση του Καθαρού CSV
             df_clean.to_csv(output_csv, index=False)
+            print(f"🔄 Ανεβάζω το αποτέλεσμα του tracking στο Drive...")
+            sync_data_to_drive()
                
             inference_progress[video_id] = {
                 "status": "completed", 
