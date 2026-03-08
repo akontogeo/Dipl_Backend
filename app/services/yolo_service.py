@@ -62,8 +62,11 @@ class YOLOService:
         model.add_callback("on_train_epoch_end", on_train_epoch_end)
 
         print(f"\n--- Ξεκινά η εκπαίδευση για το dataset: {dataset_name} ---")
-        results_dir = os.path.join(os.getcwd(), "training_results")
+        results_dir = settings.TRAINING_RESULTS_DIR 
         model_dir = os.path.join(results_dir, f"train_{dataset_name}")
+        
+        # Βεβαιώσου ότι ο κεντρικός φάκελος υπάρχει
+        os.makedirs(results_dir, exist_ok=True)
         
         # Έλεγχος αν υπάρχει ήδη trained model με το ίδιο όνομα και διαγραφή του
         if os.path.exists(model_dir):
