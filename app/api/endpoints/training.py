@@ -58,7 +58,7 @@ async def list_trained_models():
     loop = asyncio.get_event_loop()
     
     def _get_models():
-        training_results_dir = "training_results"
+        training_results_dir = settings.TRAINING_RESULTS_DIR
         if not os.path.exists(training_results_dir):
             return []
         return [d for d in os.listdir(training_results_dir) 
