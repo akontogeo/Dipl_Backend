@@ -19,7 +19,7 @@ class Settings:
 
     # Ορισμός των φακέλων
     DATASETS_DIR = os.path.join(FINAL_BASE, "datasets")
-    WEIGHTS_DIR = os.path.join(FINAL_BASE, "weights")
+    TRAINING_RESULTS_DIR = os.path.join(FINAL_BASE, "training_results")
     UPLOADS_DIR = os.path.join(FINAL_BASE, "uploads")
     OUTPUTS_DIR = os.path.join(FINAL_BASE, "outputs")
     PROCESSED_DIR = os.path.join(FINAL_BASE, "processed_data")
@@ -27,7 +27,7 @@ class Settings:
     # ΑΥΤΟΜΑΤΗ ΔΗΜΙΟΥΡΓΙΑ ΦΑΚΕΛΩΝ (για να μην κρασάρει το API)
     @classmethod
     def create_directories(cls):
-        for folder in [cls.DATASETS_DIR, cls.WEIGHTS_DIR, cls.UPLOADS_DIR, cls.OUTPUTS_DIR, cls.PROCESSED_DIR]:
+        for folder in [cls.DATASETS_DIR, cls.TRAINING_RESULTS_DIR, cls.UPLOADS_DIR, cls.OUTPUTS_DIR, cls.PROCESSED_DIR]:
             os.makedirs(folder, exist_ok=True)
 
 # Δημιουργούμε τους φακέλους αμέσως
