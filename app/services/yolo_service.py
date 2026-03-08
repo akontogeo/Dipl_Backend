@@ -6,6 +6,7 @@ import yaml
 import shutil
 from app.core.config import settings
 import torch
+from app.services.utils import sync_data_to_drive
 
 training_progress = {}
 class YOLOService:
@@ -104,3 +105,6 @@ class YOLOService:
             # ΠΟΛΥ ΣΗΜΑΝΤΙΚΟ: Απελευθέρωση της μνήμης της GPU μετά το τέλος
             if torch.cuda.is_available():
                 torch.cuda.empty_cache()
+
+            print("🔄 Συγχρονισμός αποτελεσμάτων εκπαίδευσης με το Google Drive...")
+            sync_data_to_drive()
