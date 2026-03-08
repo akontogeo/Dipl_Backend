@@ -5,7 +5,7 @@ import os
 import yaml
 import shutil
 from app.core.config import settings
-
+import torch
 
 training_progress = {}
 class YOLOService:
@@ -72,6 +72,11 @@ class YOLOService:
 
         # 3. Εκτέλεση Training με τις παραμέτρους σου
         try:
+            # ΑΝΙΧΝΕΥΣΗ GPU: 0 αν υπάρχει CUDA (GPU), αλλιώς 'cpu'
+            # Αυτό διασφαλίζει ότι η GPU θα "ξυπνήσει" μόνο τώρα
+            current_device = 0 if torch.cuda.is_available() else 'cpu'
+            
+            print(f" usando hardware: {'GPU (CUDA)' if current_device == 0 else 'CPU'}")
             results = model.train(
                 data=yaml_path,
                 epochs=epochs,
@@ -80,7 +85,8 @@ class YOLOService:
                 imgsz=320,
                 name=f"train_{dataset_name}",
                 exist_ok=True,  # Επιτρέπει overwrite αν υπάρχει ήδη
-                patience=20
+                patience=20,
+                device=current_device
             )
             training_progress[dataset_name]["status"] = "completed"
             training_progress[dataset_name]["percentage"] = 100
@@ -90,3 +96,8 @@ class YOLOService:
             print(f"\n⚠️ Η εκπαίδευση για το {dataset_name} ακυρώθηκε από τον χρήστη.")
             training_progress[dataset_name]["status"] = "cancelled"
             return None
+
+        finally:
+            # ΠΟΛΥ ΣΗΜΑΝΤΙΚΟ: Απελευθέρωση της μνήμης της GPU μετά το τέλος
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
