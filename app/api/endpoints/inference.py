@@ -11,7 +11,7 @@ from app.services.utils import sync_data_to_drive # Εισαγωγή sync
 router = APIRouter()
 inference_service = InferenceService()
 
-UPLOAD_VIDEO_DIR = "uploads/videos"
+UPLOAD_VIDEO_DIR = os.path.join(settings.UPLOADS_DIR, "videos")
 os.makedirs(UPLOAD_VIDEO_DIR, exist_ok=True)
 
 @router.post("/start-tracking")
