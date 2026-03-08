@@ -33,7 +33,10 @@ class Settings:
     def create_directories(cls):
         for folder in [cls.DATASETS_DIR, cls.TRAINING_RESULTS_DIR, cls.UPLOADS_DIR, cls.OUTPUTS_DIR, cls.PROCESSED_DIR]:
             os.makedirs(folder, exist_ok=True)
-
+        # ΠΡΟΣΘΕΣΕ ΑΥΤΟ: Δημιουργία του Backup φακέλου στο Drive
+        if cls.IS_COLAB:
+            os.makedirs(cls.DRIVE_BACKUP_DIR, exist_ok=True)
+            print(f"📂 Backup folder initialized at: {cls.DRIVE_BACKUP_DIR}")
 # Δημιουργούμε τους φακέλους αμέσως
 Settings.create_directories()
 settings = Settings()
