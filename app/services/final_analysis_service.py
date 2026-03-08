@@ -3,6 +3,8 @@ import pandas as pd
 import numpy as np
 import os
 from collections import Counter
+from app.services.utils import sync_data_to_drive  # <--- SOS
+from app.core.config import settings
 
 # Tracker για το UI
 analysis_progress = {}
@@ -121,6 +123,9 @@ class FinalAnalysisService:
                 "video_file": output_video, 
                 "excel_file": output_excel
             }
+            # --- SYNC ΣΤΟ DRIVE ---
+            print("🔄 Συγχρονισμός τελικών αποτελεσμάτων (Video & Excel) με το Drive...")
+            sync_data_to_drive()
 
         except Exception as e:
             analysis_progress[analysis_id] = {"status": "error", "message": str(e)}
