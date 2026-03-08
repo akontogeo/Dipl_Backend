@@ -1,26 +1,35 @@
 import os
 import random
+from pathlib import Path
 
 random.seed(42)
 
 class Settings:
-    # 1. Ορίζουμε ως βάση το Google Drive (εφόσον το έχεις κάνει mount)
-    # Προσοχή: Βεβαιώσου ότι έχεις φτιάξει τον φάκελο Dipl_Backend στο Drive σου!
-    DRIVE_BASE = "/content/drive/MyDrive/Dipl_Backend"
+    # 1. Ορίζουμε τη βάση του Colab (Τοπικός δίσκος - ΠΟΛΥ ΓΡΗΓΟΡΟΣ)
+    # Χρησιμοποιούμε το /content που είναι ο standard φάκελος του Colab
+    COLAB_BASE = "/content/Dipl_Backend_Local"
     
-    # 2. Αν το Drive δεν είναι συνδεδεμένο (π.χ. το τρέχεις τοπικά), 
-    # χρησιμοποίησε τον παλιό τρόπο ως εναλλακτική
+    # 2. Αν τρέχεις τοπικά στο PC σου (Windows/Mac), βρίσκει το φάκελο του project
     BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     
-    # Τελική επιλογή φακέλων: Αν υπάρχει το Drive, σώσε εκεί. Αν όχι, τοπικά.
-    FINAL_BASE = DRIVE_BASE if os.path.exists("/content/drive") else BASE_DIR
+    # Επιλογή: Αν είμαστε σε Colab, χρησιμοποίησε τον τοπικό φάκελο /content
+    # αλλιώς χρησιμοποίησε το BASE_DIR του project
+    IS_COLAB = os.path.exists("/content")
+    FINAL_BASE = COLAB_BASE if IS_COLAB else BASE_DIR
 
-    # Οι φάκελοι πλέον θα δείχνουν στο Drive
+    # Ορισμός των φακέλων
     DATASETS_DIR = os.path.join(FINAL_BASE, "datasets")
     WEIGHTS_DIR = os.path.join(FINAL_BASE, "weights")
     UPLOADS_DIR = os.path.join(FINAL_BASE, "uploads")
-    # Πρόσθεσε και τους υπόλοιπους που είδαμε ότι χρειάζεσαι
     OUTPUTS_DIR = os.path.join(FINAL_BASE, "outputs")
     PROCESSED_DIR = os.path.join(FINAL_BASE, "processed_data")
 
+    # ΑΥΤΟΜΑΤΗ ΔΗΜΙΟΥΡΓΙΑ ΦΑΚΕΛΩΝ (για να μην κρασάρει το API)
+    @classmethod
+    def create_directories(cls):
+        for folder in [cls.DATASETS_DIR, cls.WEIGHTS_DIR, cls.UPLOADS_DIR, cls.OUTPUTS_DIR, cls.PROCESSED_DIR]:
+            os.makedirs(folder, exist_ok=True)
+
+# Δημιουργούμε τους φακέλους αμέσως
+Settings.create_directories()
 settings = Settings()
