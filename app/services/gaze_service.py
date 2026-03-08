@@ -1,6 +1,7 @@
 import json
 import pandas as pd
 import os
+from app.services.utils import sync_data_to_drive
 
 class GazeService:
     def process_gaze_file(self, input_path: str, output_path: str):
@@ -38,4 +39,5 @@ class GazeService:
 
         df = pd.DataFrame(gaze_entries)
         df.to_csv(output_path, index=False)
+        sync_data_to_drive()
         return len(df)
