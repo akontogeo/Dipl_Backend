@@ -8,6 +8,10 @@ class Settings:
     # 1. Ορίζουμε τη βάση του Colab (Τοπικός δίσκος - ΠΟΛΥ ΓΡΗΓΟΡΟΣ)
     # Χρησιμοποιούμε το /content που είναι ο standard φάκελος του Colab
     COLAB_BASE = "/content/Dipl_Backend_Local"
+
+    # 2. Βάση για το Google Drive (Μόνιμη αποθήκευση)
+    # Εδώ θα γίνονται τα backups για να μη χάνεις τίποτα
+    DRIVE_BACKUP_DIR = "/content/drive/MyDrive/Dipl_Backend_Backup"
     
     # 2. Αν τρέχεις τοπικά στο PC σου (Windows/Mac), βρίσκει το φάκελο του project
     BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
