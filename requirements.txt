@@ -10,3 +10,4 @@ ultralytics
 pandas
 openpyxl
 torch
+subprocess
