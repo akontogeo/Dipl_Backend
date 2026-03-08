@@ -9,3 +9,4 @@ tqdm
 ultralytics
 pandas
 openpyxl
+torch
