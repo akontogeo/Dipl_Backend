@@ -3,11 +3,12 @@ import os
 import shutil
 import asyncio
 from app.services.gaze_service import GazeService
+from app.core.config import settings
 
 router = APIRouter()
 gaze_service = GazeService()
 
-UPLOAD_DIR = "uploads/gaze_logs"
+UPLOAD_DIR = os.path.join(settings.UPLOADS_DIR, "gaze_logs")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 @router.get("/list-sessions")
