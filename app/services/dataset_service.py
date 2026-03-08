@@ -5,6 +5,7 @@ from app.core.config import settings
 import glob
 import random
 from app.services.augment_service import AugmentService
+from app.services.utils import sync_data_to_drive
 
 class DatasetService:
     def __init__(self):
@@ -29,6 +30,16 @@ class DatasetService:
         self.rebalance_dataset(target_path)
         # 3. Augmentation (μόνο στις εικόνες του Train)
         self.augment_service.augment_dataset(target_path, multiplier=3)
+
+        # --- ΤΟ SOS ΚΟΜΜΑΤΙ ---
+        # Μόλις τελειώσουν όλα τα βαριά tasks (unzip, shuffle, augment), 
+        # στέλνουμε το νέο dataset στο Drive για μόνιμη αποθήκευση.
+        try:
+            sync_data_to_drive()
+            print(f"✅ Dataset {folder_name} synced to Google Drive successfully.")
+        except Exception as e:
+            print(f"⚠️ Sync to drive failed: {e}")
+        # ----------------------
         
         return target_path
 
