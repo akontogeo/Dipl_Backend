@@ -5,6 +5,8 @@ from fastapi import APIRouter, UploadFile, File, BackgroundTasks
 import os
 import shutil
 from app.services.inference_service import InferenceService, inference_progress
+from app.core.config import settings  # Εισαγωγή settings
+from app.services.utils import sync_data_to_drive # Εισαγωγή sync
 
 router = APIRouter()
 inference_service = InferenceService()
@@ -17,14 +19,14 @@ async def start_inference(background_tasks: BackgroundTasks, session_name: str, 
     video_id = str(uuid.uuid4())
     
     # Δημιουργία session-based directories για uploads και processed
-    session_upload_dir = os.path.join("uploads/sessions", session_name, "videos")
-    session_output_dir = os.path.join("processed_data/sessions", session_name, "yolo_csv")
+    session_upload_dir = os.path.join(settings.UPLOADS_DIR, "sessions", session_name, "videos")
+    session_output_dir = os.path.join(settings.PROCESSED_DIR, "sessions", session_name, "yolo_csv")
     os.makedirs(session_upload_dir, exist_ok=True)
     os.makedirs(session_output_dir, exist_ok=True)
     
     # 1. Path για το βίντεο και το μοντέλο (αποθήκευση στο session folder)
     video_path = os.path.join(session_upload_dir, file.filename)
-    model_path = f"training_results/train_{dataset_name}/weights/best.pt"
+    model_path = os.path.join(settings.TRAINING_RESULTS_DIR, f"train_{dataset_name}", "weights", "best.pt")
     output_csv = os.path.join(session_output_dir, f"detections_{file.filename.replace('.mp4', '.csv')}")
 
     # 2. Αποθήκευση βίντεο
