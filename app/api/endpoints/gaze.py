@@ -16,7 +16,7 @@ async def list_sessions():
     loop = asyncio.get_event_loop()
     
     def _get_sessions():
-        sessions_dir = "processed_data/sessions"
+        sessions_dir = os.path.join(settings.PROCESSED_DIR, "sessions")
         if not os.path.exists(sessions_dir):
             return []
         return [d for d in os.listdir(sessions_dir) 
@@ -28,8 +28,8 @@ async def list_sessions():
 @router.post("/process-gaze")
 async def process_gaze(session_name: str, file: UploadFile = File(...)):
     # Δημιουργία session-based directories για uploads και processed
-    session_upload_dir = os.path.join("uploads/sessions", session_name, "gaze_logs")
-    session_output_dir = os.path.join("processed_data/sessions", session_name, "gaze_csv")
+    session_upload_dir = os.path.join(settings.UPLOADS_DIR, "sessions", session_name)
+    session_output_dir = os.path.join(settings.PROCESSED_DIR, "sessions", session_name)
     os.makedirs(session_upload_dir, exist_ok=True)
     os.makedirs(session_output_dir, exist_ok=True)
     
