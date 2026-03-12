@@ -32,7 +32,7 @@ class FinalAnalysisService:
             fps = cap.get(cv2.CAP_PROP_FPS) or 25
             total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
 
-            fourcc = cv2.VideoWriter_fourcc(*'avc1')
+            fourcc = cv2.VideoWriter_fourcc(*'H264')
             out = cv2.VideoWriter(output_video, fourcc, fps, (width, height))
 
             # --- INDEXING ---
