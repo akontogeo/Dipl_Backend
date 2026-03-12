@@ -30,8 +30,8 @@ async def start_analysis(background_tasks: BackgroundTasks, session_name: str):
 
     # 3. Σύνδεση με τα CSV (Προσοχή: Τα ονόματα πρέπει να είναι ίδια με αυτά που σώζουν τα άλλα endpoints)
     # Εδώ χρησιμοποιούμε τα ονόματα που ορίσαμε στο gaze.py και inference.py
-    gaze_csv = os.path.join(session_gaze_dir, f"processed_{session_name}.csv")
-    yolo_csv = os.path.join(session_yolo_dir, f"detections_{session_name}.csv")
+    gaze_csv = os.path.join(session_gaze_dir, f"processed_gazedata.csv")
+    yolo_csv = os.path.join(session_yolo_dir, f"detections_scenevideo.csv")
 
     # 4. Output Paths
     output_video = os.path.join(session_output_dir, f"final_{video_filename}")
