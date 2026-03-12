@@ -15,7 +15,7 @@ async def start_analysis(background_tasks: BackgroundTasks, session_name: str):
     # 1. Σωστά Paths χρησιμοποιώντας το settings (Απόλυτα paths στο Local)
     session_upload_dir = os.path.join(settings.UPLOADS_DIR, "sessions", session_name, "videos")
     session_gaze_dir = os.path.join(settings.PROCESSED_DIR, "sessions", session_name)
-    session_yolo_dir = os.path.join(session_gaze_dir, "yolo_csv"))
+    session_yolo_dir = os.path.join(session_gaze_dir, "yolo_csv")
     session_output_dir = os.path.join(settings.OUTPUTS_DIR, "sessions", session_name)
 
     # 2. Εντοπισμός video file
