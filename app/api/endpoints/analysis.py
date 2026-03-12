@@ -10,6 +10,7 @@ service = FinalAnalysisService()
 @router.post("/run")
 async def start_analysis(background_tasks: BackgroundTasks, session_name: str):
     analysis_id = str(uuid.uuid4())
+    session_name = session_name.strip()
 
     # 1. Σωστά Paths χρησιμοποιώντας το settings (Απόλυτα paths στο Local)
     session_upload_dir = os.path.join(settings.UPLOADS_DIR, "sessions", session_name, "videos")
@@ -30,8 +31,8 @@ async def start_analysis(background_tasks: BackgroundTasks, session_name: str):
 
     # 3. Σύνδεση με τα CSV (Προσοχή: Τα ονόματα πρέπει να είναι ίδια με αυτά που σώζουν τα άλλα endpoints)
     # Εδώ χρησιμοποιούμε τα ονόματα που ορίσαμε στο gaze.py και inference.py
-    gaze_csv = os.path.join(session_gaze_dir, f"processed_gazedata.csv")
-    yolo_csv = os.path.join(session_yolo_dir, f"detections_scenevideo.csv")
+    gaze_csv = os.path.join(session_gaze_dir, "processed_gazedata.csv")
+    yolo_csv = os.path.join(session_yolo_dir, "detections_scenevideo.csv")
 
     # 4. Output Paths
     output_video = os.path.join(session_output_dir, f"final_{video_filename}")
