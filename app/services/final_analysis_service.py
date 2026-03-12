@@ -32,7 +32,7 @@ class FinalAnalysisService:
             fps = cap.get(cv2.CAP_PROP_FPS) or 25
             total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
 
-            fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+            fourcc = cv2.VideoWriter_fourcc(*'avc1')
             out = cv2.VideoWriter(output_video, fourcc, fps, (width, height))
 
             # --- INDEXING ---
@@ -125,6 +125,7 @@ class FinalAnalysisService:
             }
             # --- SYNC ΣΤΟ DRIVE ---
             print("🔄 Συγχρονισμός τελικών αποτελεσμάτων (Video & Excel) με το Drive...")
+            cv2.destroyAllWindows()
             sync_data_to_drive()
 
         except Exception as e:
