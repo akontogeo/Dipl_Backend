@@ -49,7 +49,7 @@ async def start_analysis(background_tasks: BackgroundTasks, session_name: str):
 
     background_tasks.add_task(
         service.run_master_analysis,
-        analysis_id, video_path, gaze_csv, yolo_csv, output_video, output_excel
+        analysis_id,session_name, video_path, gaze_csv, yolo_csv, output_video, output_excel
     )
 
     return {
