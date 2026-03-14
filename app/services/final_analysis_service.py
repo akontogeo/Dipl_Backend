@@ -5,6 +5,7 @@ import os
 from collections import Counter
 from app.services.utils import sync_data_to_drive  # <--- SOS
 from app.core.config import settings
+from app.services.reporting_service import ReportingService
 
 # Tracker για το UI
 analysis_progress = {}
@@ -123,6 +124,9 @@ class FinalAnalysisService:
                 "video_file": output_video, 
                 "excel_file": output_excel
             }
+
+            reporting = ReportingService()
+            reporting.generate_session_report(session_name) # όπου session_name το όνομα της συνεδρίας
             # --- SYNC ΣΤΟ DRIVE ---
             print("🔄 Συγχρονισμός τελικών αποτελεσμάτων (Video & Excel) με το Drive...")
             cv2.destroyAllWindows()
