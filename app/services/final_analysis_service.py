@@ -130,7 +130,6 @@ class FinalAnalysisService:
             }
             # --- SYNC ΣΤΟ DRIVE ---
             print("🔄 Συγχρονισμός τελικών αποτελεσμάτων (Video & Excel) με το Drive...")
-            cv2.destroyAllWindows()
             sync_data_to_drive()
 
         except Exception as e:
