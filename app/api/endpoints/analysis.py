@@ -4,6 +4,9 @@ from app.services.final_analysis_service import FinalAnalysisService, analysis_p
 from app.core.config import settings
 import os
 
+from fastapi.responses import FileResponse
+import urllib.parse
+
 router = APIRouter()
 service = FinalAnalysisService()
 
@@ -61,3 +64,19 @@ async def start_analysis(background_tasks: BackgroundTasks, session_name: str):
 @router.get("/status/{analysis_id}")
 async def get_status(analysis_id: str):
     return analysis_progress.get(analysis_id, {"status": "not_found"})
+
+@router.get("/download-report")
+async def download_report(file_path: str):
+    # file_path π.χ. "outputs/sessions/Σ4/report_pie.png"
+    decoded_path = urllib.parse.unquote(file_path)
+    abs_path = os.path.join(settings.FINAL_BASE, decoded_path)
+    
+    if not os.path.exists(abs_path):
+        raise HTTPException(status_code=404, detail="Το αρχείο δεν βρέθηκε")
+
+    return FileResponse(
+        path=abs_path,
+        # Αυτό το header αναγκάζει τον browser να κάνει Download:
+        content_disposition_type="attachment", 
+        filename=os.path.basename(abs_path)
+    )
