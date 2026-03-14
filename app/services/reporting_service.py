@@ -30,6 +30,10 @@ class ReportingService:
         # 3. Υπολογισμός Μετρικών
         # Υποθέτουμε 50Hz (0.02s ανά δείγμα) - προσάρμοσε το αν το FPS είναι διαφορετικό
         duration = df[target_col].value_counts() * 0.02
+        df_obj = df[df[target_col] != 'Background'].copy()
+        sns.set_style("whitegrid")
+        plt.rcParams['figure.facecolor'] = 'white'
+        
         changes = df[target_col] != df[target_col].shift()
         groups = changes.cumsum()
         temp = df.copy()
@@ -85,6 +89,30 @@ class ReportingService:
         bar_path = os.path.join(session_dir, "report_duration.png")
         plt.savefig(bar_path, dpi=150, bbox_inches='tight')
         plt.close()
+
+        # 3. [ΝΕΟ] TTFF (Time to First Fixation)
+        if not df_obj.empty:
+            ttff = df_obj.groupby(target_col)['timestamp'].min().sort_values()
+            plt.figure(figsize=(10, 6))
+            sns.barplot(x=ttff.values, y=ttff.index, palette='coolwarm')
+            plt.title('Time to First Fixation (TTFF) - Ποιο είδε πρώτο;')
+            plt.xlabel('Seconds')
+            plt.savefig(os.path.join(session_dir, "report_ttff.png"), dpi=150)
+            plt.close()
+
+        # 4. [ΝΕΟ] Pupil Diameter (Cognitive Load)
+        if 'pupil_diameter' in df.columns:
+            df_pupil = df_obj[df_obj['pupil_diameter'] > 1.5].copy()
+            if not df_pupil.empty:
+                avg_pupil = df_pupil.groupby(target_col)['pupil_diameter'].mean().sort_values(ascending=False)
+                plt.figure(figsize=(10, 6))
+                sns.barplot(x=avg_pupil.values, y=avg_pupil.index, palette='magma')
+                plt.title('Average Pupil Diameter (Cognitive Load)')
+                plt.xlabel('Diameter (mm)')
+                # Zoom για να φαίνονται οι διαφορές
+                plt.xlim(max(0, avg_pupil.min() - 0.2), avg_pupil.max() + 0.1)
+                plt.savefig(os.path.join(session_dir, "report_pupil.png"), dpi=150)
+                plt.close()
 
         return {
             "status": "success",
