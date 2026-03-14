@@ -11,7 +11,7 @@ from app.services.reporting_service import ReportingService
 analysis_progress = {}
 
 class FinalAnalysisService:
-    def run_master_analysis(self, analysis_id: str, video_path: str, gaze_csv: str, yolo_csv: str, output_video: str, output_excel: str):
+    def run_master_analysis(self, analysis_id: str,session_name: str, video_path: str, gaze_csv: str, yolo_csv: str, output_video: str, output_excel: str):
         try:
             analysis_progress[analysis_id] = {"status": "starting", "percentage": 0}
             
