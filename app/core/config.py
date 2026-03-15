@@ -5,14 +5,19 @@ from pathlib import Path
 random.seed(42)
 
 class Settings:
-    if os.path.exists('/content/drive/MyDrive'):
+    
+    # --- 1. ΕΛΕΓΧΟΣ ΠΕΡΙΒΑΛΛΟΝΤΟΣ ---
+    IS_COLAB = os.path.exists('/content')
+    HAS_DRIVE = os.path.exists('/content/drive/MyDrive')
+    
+    # --- 2. ΟΡΙΣΜΟΣ ΒΑΣΙΚΟΥ PATH ---
+    if HAS_DRIVE:
         FINAL_BASE = "/content/drive/MyDrive/Dipl_Backend_Backup"
     else:
-        # Αν όχι, αποθήκευση τοπικά στο project folder του Colab
         FINAL_BASE = "/content/Dipl_Backend"
     
-    # 2. Αν τρέχεις τοπικά στο PC σου (Windows/Mac), βρίσκει το φάκελο του project
-    BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    # Path για το rsync backup
+    DRIVE_BACKUP_DIR = "/content/drive/MyDrive/Dipl_Backup_Folder"
 
     # Ορισμός των φακέλων
     DATASETS_DIR = os.path.join(FINAL_BASE, "datasets")
@@ -21,15 +26,29 @@ class Settings:
     OUTPUTS_DIR = os.path.join(FINAL_BASE, "outputs")
     PROCESSED_DIR = os.path.join(FINAL_BASE, "processed_data")
 
-    # ΑΥΤΟΜΑΤΗ ΔΗΜΙΟΥΡΓΙΑ ΦΑΚΕΛΩΝ (για να μην κρασάρει το API)
     @classmethod
     def create_directories(cls):
-        for folder in [cls.DATASETS_DIR, cls.TRAINING_RESULTS_DIR, cls.UPLOADS_DIR, cls.OUTPUTS_DIR, cls.PROCESSED_DIR]:
+        # Δημιουργία των τοπικών φακέλων (Colab ή Drive)
+        folders = [
+            cls.DATASETS_DIR, 
+            cls.TRAINING_RESULTS_DIR, 
+            cls.UPLOADS_DIR, 
+            cls.OUTPUTS_DIR, 
+            cls.PROCESSED_DIR
+        ]
+        
+        for folder in folders:
             os.makedirs(folder, exist_ok=True)
-        # ΠΡΟΣΘΕΣΕ ΑΥΤΟ: Δημιουργία του Backup φακέλου στο Drive
-        if cls.IS_COLAB:
+            print(f"📁 Directory ready: {folder}")
+
+        # --- 4. ΔΙΟΡΘΩΣΗ ΓΙΑ ΤΟ DRIVE BACKUP ---
+        # Δημιουργούμε τον φάκελο backup μόνο αν όντως υπάρχει Drive
+        if cls.HAS_DRIVE:
             os.makedirs(cls.DRIVE_BACKUP_DIR, exist_ok=True)
             print(f"📂 Backup folder initialized at: {cls.DRIVE_BACKUP_DIR}")
-# Δημιουργούμε τους φακέλους αμέσως
+        else:
+            print("ℹ️ Drive not mounted. Skipping backup folder creation.")
+
+# Εκτέλεση της δημιουργίας
 Settings.create_directories()
 settings = Settings()
