@@ -8,9 +8,9 @@ def sync_data_to_drive():
     # ΔΙΟΡΘΩΣΗ ΕΔΩ: Χρησιμοποιούμε το σωστό όνομα από τα Settings σου
     drive_dir = settings.DRIVE_BACKUP_DIR 
     
-    # Βεβαιωνόμαστε ότι ο φάκελος στο Drive υπάρχει
-    if not os.path.exists(drive_dir):
-        os.makedirs(drive_dir, exist_ok=True)
+    if not os.path.exists('/content/drive/MyDrive'):
+        print("ℹ️ Skip Sync: Το Google Drive δεν είναι συνδεδεμένο. Τα αρχεία παραμένουν μόνο τοπικά.")
+        return False
 
     try:
         # Το rsync χρειάζεται προσοχή στα slashes: 
