@@ -69,8 +69,8 @@ class ReportingService:
                 startangle=140, wedgeprops={'edgecolor': 'black'})
         
         plt.title(f"Dwell Time Analysis: {session_name}\nSocial Gaze Index: {social_index:.1f}%")
-        pie_path = os.path.join(session_dir, "report_pie.png") [cite: 149, 172]
-        plt.savefig(pie_path, dpi=150, bbox_inches='tight') [cite: 706]
+        pie_path = os.path.join(session_dir, "report_pie.png") 
+        plt.savefig(pie_path, dpi=150, bbox_inches='tight') 
         plt.close()
         
         # # --- BAR CHART (Duration) ---
