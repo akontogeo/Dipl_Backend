@@ -107,8 +107,7 @@ class ReportingService:
         return {
             "status": "success",
             "files": {
-                "metrics": metrics_csv_path,
-                "pie_chart": pie_path,
-                "bar_chart": bar_path
+    
+                "pie_chart": pie_path
             }
         }
