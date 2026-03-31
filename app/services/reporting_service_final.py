@@ -53,7 +53,8 @@ class ReportingService:
         social_val = dwell_times.get('Face (Social)', 0) + dwell_times.get('Hand (Social)', 0)
         puzzle_val = dwell_times.get('Puzzle (Non-Social)', 0)
         
-        social_index = (social_val / (social_val + puzzle_val) * 100) if (social_val + puzzle_val) > 0 else 0
+        total_session_time = dwell_times.sum() 
+        social_index = (social_val / total_session_time * 100) if total_session_time > 0 else 0
         
         # --- Δημιουργία Pie Chart ---
         plt.figure(figsize=(10, 8))
