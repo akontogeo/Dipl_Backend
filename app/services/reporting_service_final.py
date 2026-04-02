@@ -68,15 +68,42 @@ class ReportingService:
         df_obj = df[df[target_col] != 'Background'].copy()
         if df_obj.empty: return None
         
-        ttff_data = df_obj.groupby(target_col)['timestamp'].min().sort_values()
+        ttff_results = {}
+        labels = df_obj[target_col].unique()
+        
+        for label in labels:
+            # 1. Δημιουργούμε μια σειρά από True/False (1/0) αν κοιτάζει το label
+            label_mask = (df_obj[target_col] == label).astype(int)
+            
+            # 2. Rolling sum για να βρούμε 5 συνεχή δείγματα (100ms threshold)
+            # Σύμφωνα με Coel et al. (2024) / Holmqvist (2011)
+            consecutive_looks = label_mask.rolling(window=5).sum()
+            
+            # 3. Βρίσκουμε το πρώτο index που το άθροισμα είναι 5
+            first_fix_idx = consecutive_looks[consecutive_looks == 5].index
+            
+            if not first_fix_idx.empty:
+                # Το TTFF είναι το timestamp του ΠΡΩΤΟΥ δείγματος αυτού του σερί
+                actual_start_idx = first_fix_idx[0] - 4
+                ttff_results[label] = df_obj.loc[actual_start_idx, 'timestamp']
+
+        if not ttff_results: return None
+
+        # Μετατροπή σε Series και ταξινόμηση
+        ttff_data = pd.Series(ttff_results).sort_values()
+        
+        # Σχεδίαση Bar Chart (όπως πριν)
         plt.figure(figsize=(12, 6))
         ax = sns.barplot(x=ttff_data.values, y=ttff_data.index, palette="viridis", hue=ttff_data.index, legend=False)
+        
         for i, v in enumerate(ttff_data.values):
             ax.text(v + 0.05, i, f"{v:.2f}s", va='center', fontweight='bold')
-        plt.title(f"TTFF per Label: {session_name}")
-        plt.xlim(0, ttff_data.max() * 1.15)
+            
+        plt.title(f"TTFF (Min 100ms Fixation): {session_name}")
+        plt.xlabel("Time to First Fixation (seconds)")
+        plt.xlim(0, ttff_data.max() * 1.2)
         
-        path = os.path.join(session_dir, "report_ttff_all.png")
+        path = os.path.join(session_dir, "report_ttff_scientific.png")
         plt.savefig(path, dpi=150, bbox_inches='tight')
         plt.close()
         return path
