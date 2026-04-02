@@ -5,7 +5,7 @@ import os
 from collections import Counter
 from app.services.utils import sync_data_to_drive  # <--- SOS
 from app.core.config import settings
-from app.services.reporting_service import ReportingService
+from app.services.reporting_service_final import ReportingService
 
 # Tracker για το UI
 analysis_progress = {}
