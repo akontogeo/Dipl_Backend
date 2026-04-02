@@ -26,6 +26,9 @@ class FinalAnalysisService:
             # Υπολογισμός εμβαδού για τη λογική σου
             df_yolo['area'] = (df_yolo['x_max'] - df_yolo['x_min']) * (df_yolo['y_max'] - df_yolo['y_min'])
 
+            os.makedirs(os.path.dirname(output_video), exist_ok=True)
+            os.makedirs(os.path.dirname(output_excel), exist_ok=True)
+
             # --- VIDEO SETUP ---
             cap = cv2.VideoCapture(video_path)
             width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
