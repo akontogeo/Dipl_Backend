@@ -86,7 +86,7 @@ class YOLOService:
                 epochs=epochs,
                 batch=8,
                 project=results_dir,
-                imgsz=320,
+                imgsz=1024,
                 name=f"train_{dataset_name}",
                 exist_ok=True,  # Επιτρέπει overwrite αν υπάρχει ήδη
                 patience=20,
