@@ -81,16 +81,31 @@ class ReportingService:
         plt.close()
         return path
 
-    def _generate_pupil_report(self, df, target_col, session_dir, session_name):
-        if 'pupil_diameter' not in df.columns: return None
-        df_pupil = df[(df['pupil_diameter'] > 1.5) & (df[target_col] != 'Background')].copy()
-        if df_pupil.empty: return None
+    def generate_pupil_report(self, df, target_col, session_dir, session_name):
+        # 1. Φιλτράρουμε τα 0 και τα outliers (όπως είπαμε, το "τίμιο" καθάρισμα)
+        df_pupil = df[(df['pupil_diameter'] > 1.5) & (df['pupil_diameter'] < 8.0)].copy()
         
+        if df_pupil.empty: return None
+
+        # 2. Υπολογισμός του Γενικού Μέσου Όρου (Η "Ευθεία" μας)
+        overall_mean = df_pupil['pupil_diameter'].mean()
+
+        # 3. Μέσος όρος ανά αντικείμενο
         avg_pupil = df_pupil.groupby(target_col)['pupil_diameter'].mean().sort_values(ascending=False)
+
+        # 4. Σχεδίαση
         plt.figure(figsize=(10, 6))
-        sns.barplot(x=avg_pupil.values, y=avg_pupil.index, palette='magma', hue=avg_pupil.index, legend=False)
-        plt.xlim(avg_pupil.min() - 0.2, avg_pupil.max() + 0.1)
-        plt.title("Mean Pupil Diameter (Cognitive Load)")
+        ax = sns.barplot(x=avg_pupil.values, y=avg_pupil.index, palette='magma')
+
+        # ΠΡΟΣΘΗΚΗ ΤΗΣ ΕΥΘΕΙΑΣ (Baseline)
+        plt.axvline(overall_mean, color='red', linestyle='--', label=f'Session Mean: {overall_mean:.2f}mm')
+        
+        plt.title(f'Pupil Diameter per Object vs Session Baseline\n(Red Line = Average Engagement)')
+        plt.xlabel('Diameter (mm)')
+        plt.legend() # Για να φαίνεται τι είναι η κόκκινη γραμμή
+        
+        # Zoom για να φαίνονται οι διαφορές
+        plt.xlim(overall_mean - 0.5, overall_mean + 0.5)
         
         path = os.path.join(session_dir, "report_pupil.png")
         plt.savefig(path, dpi=150, bbox_inches='tight')
