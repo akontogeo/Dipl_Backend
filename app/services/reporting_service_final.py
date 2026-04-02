@@ -30,13 +30,17 @@ class ReportingService:
         # C. Pupil Report (Cognitive Load)
         pupil_path = self._generate_pupil_report(df, target_col, session_dir, session_name)
 
+        # D. Fixation Timeline (ΑΥΤΟ ΕΛΕΙΠΕ - Η κλήση της νέας μεθόδου)
+        timeline_path = self._generate_fixation_timeline(df, target_col, session_dir, session_name)
+
         return {
             "status": "success",
             "social_gaze_index": f"{social_index:.1f}%",
             "files": {
                 "pie_chart": pie_path,
                 "ttff_chart": ttff_path,
-                "pupil_chart": pupil_path
+                "pupil_chart": pupil_path,
+                "timeline_chart": timeline_path
             }
         }
 
@@ -135,6 +139,42 @@ class ReportingService:
         plt.xlim(overall_mean - 0.5, overall_mean + 0.5)
         
         path = os.path.join(session_dir, "report_pupil.png")
+        plt.savefig(path, dpi=150, bbox_inches='tight')
+        plt.close()
+        return path
+    def _generate_fixation_timeline(self, df, target_col, session_dir, session_name):
+        df_obj = df[df[target_col] != 'Background'].copy()
+        if df_obj.empty: return None
+
+        all_fixations = []
+        
+        for label in df_obj[target_col].unique():
+            label_mask = (df_obj[target_col] == label).astype(int)
+            blocks = (label_mask != label_mask.shift()).cumsum()
+            
+            # Υπολογίζουμε διάρκεια ΚΑΙ το timestamp έναρξης
+            group = df_obj[label_mask == 1].groupby(blocks)
+            for _, g in group:
+                duration = len(g) * 0.02
+                if duration >= 0.1: # Threshold 100ms
+                    all_fixations.append({
+                        'label': label,
+                        'duration': duration,
+                        'start_time': g['timestamp'].iloc[0]
+                    })
+
+        fix_df = pd.DataFrame(all_fixations)
+        
+        # Σχεδίαση Scatter Plot
+        plt.figure(figsize=(14, 6))
+        sns.scatterplot(data=fix_df, x='start_time', y='duration', hue='label', s=100, alpha=0.7)
+        
+        plt.title(f"Fixation Duration Evolution: {session_name}")
+        plt.xlabel("Session Time (seconds)")
+        plt.ylabel("Fixation Duration (seconds)")
+        plt.grid(True, linestyle='--', alpha=0.6)
+        
+        path = os.path.join(session_dir, "report_fixation_timeline.png")
         plt.savefig(path, dpi=150, bbox_inches='tight')
         plt.close()
         return path
