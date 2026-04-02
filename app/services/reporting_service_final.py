@@ -108,7 +108,7 @@ class ReportingService:
         plt.close()
         return path
 
-    def generate_pupil_report(self, df, target_col, session_dir, session_name):
+    def _generate_pupil_report(self, df, target_col, session_dir, session_name):
         # 1. Φιλτράρουμε τα 0 και τα outliers (όπως είπαμε, το "τίμιο" καθάρισμα)
         df_pupil = df[(df['pupil_diameter'] > 1.5) & (df['pupil_diameter'] < 8.0)].copy()
         
