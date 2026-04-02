@@ -74,6 +74,55 @@ class ReportingService:
         plt.savefig(pie_path, dpi=150, bbox_inches='tight') 
         plt.close()
         
+
+        def generate_full_ttff_report(self, df, session_dir, session_name):
+        # 1. Καθορισμός της στήλης στόχου (smoothed ή raw)
+        target_col = 'looking_at'
+        
+        # 2. Φιλτράρουμε το Background και κρατάμε μόνο τα αντικείμενα (ROIs)
+        df_objects = df[df[target_col] != 'Background'].copy()
+        
+        if df_objects.empty:
+            print("⚠️ Δεν βρέθηκαν αντικείμενα για υπολογισμό TTFF.")
+            return None
+
+        # 3. Υπολογισμός TTFF για ΟΛΑ τα διαθέσιμα labels
+        # Βρίσκουμε το πρώτο timestamp για κάθε μοναδικό label
+        ttff_data = df_objects.groupby(target_col)['timestamp'].min().sort_values()
+
+        # 4. Σχεδίαση Γραφήματος
+        plt.figure(figsize=(12, 6))
+        sns.set_style("whitegrid")
+        
+        # Χρησιμοποιούμε μια παλέτα που προσαρμόζεται στον αριθμό των labels
+        ax = sns.barplot(
+            x=ttff_data.values, 
+            y=ttff_data.index, 
+            palette="viridis", 
+            hue=ttff_data.index, 
+            legend=False
+        )
+
+        # Προσθήκη labels με το χρόνο πάνω στις μπάρες
+        for i, v in enumerate(ttff_data.values):
+            ax.text(v + 0.05, i, f"{v:.2f}s", va='center', fontweight='bold', color='black')
+
+        plt.title(f"Time to First Fixation (TTFF) per Label\nSession: {session_name}", fontsize=14)
+        plt.xlabel("Time (Seconds from Start)", fontsize=12)
+        plt.ylabel("Detected Labels", fontsize=12)
+        
+        # Δυναμικό όριο στο X για να φαίνονται καθαρά τα νούμερα
+        plt.xlim(0, ttff_data.max() * 1.15)
+        
+        plt.tight_layout()
+        
+        # Αποθήκευση
+        save_path = os.path.join(session_dir, "report_ttff_all.png")
+        plt.savefig(save_path, dpi=150)
+        plt.close()
+        
+        return ttff_data
+        
         # # --- BAR CHART (Duration) ---
         # sns.set_style("whitegrid")
         # plt.figure(figsize=(10, 6))
