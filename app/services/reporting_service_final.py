@@ -32,7 +32,7 @@ class ReportingService:
 
         def categorize_labels(label):
             l = str(label).lower()
-            if 'face' in l or 'prosopo' in l:
+            if 'therapist_face' in l or 'prosopo' in l:
                 return 'Face (Social)'
             elif 'hand' in l or 'xeri' in l:
                 return 'Hand (Social)'
