@@ -1,166 +1,98 @@
-import pandas as pd
+import pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import os
-from collections import Counter
 from app.core.config import settings
 
 class ReportingService:
     def generate_session_report(self, session_name: str):
         # 1. Καθορισμός Paths
         session_dir = os.path.join(settings.OUTPUTS_DIR, "sessions", session_name)
-        # Ψάχνουμε το αρχείο results_SESSIONNAME.xlsx
         excel_path = os.path.join(session_dir, f"results_{session_name}.xlsx")
         
         if not os.path.exists(excel_path):
-            # Δοκιμή για .csv αν δεν υπάρχει .xlsx
             excel_path = excel_path.replace('.xlsx', '.csv')
             if not os.path.exists(excel_path):
-                return {"status": "error", "message": f"Δεν βρέθηκε αρχείο αποτελεσμάτων στο {session_dir}"}
+                return {"status": "error", "message": "Δεν βρέθηκε αρχείο."}
 
         # 2. Φόρτωση Δεδομένων
-        if excel_path.endswith('.xlsx'):
-            df = pd.read_excel(excel_path)
-        else:
-            df = pd.read_csv(excel_path)
-
-        # Επιλογή στήλης
+        df = pd.read_excel(excel_path) if excel_path.endswith('.xlsx') else pd.read_csv(excel_path)
         target_col = 'looking_at' if 'looking_at' in df.columns else df.columns[-1]
 
-        # 3. Υπολογισμός Μετρικών
-       # --- ROI Categorization με τα 4 συγκεκριμένα ονόματα ---
-
-        def categorize_labels(label):
-            l = str(label).lower()
-            if 'therapist_face' in l or 'prosopo' in l:
-                return 'Face (Social)'
-            elif 'hand' in l or 'xeri' in l:
-                return 'Hand (Social)'
-            elif 'background' in l:
-                return 'Background (Non-Social)'
-            else:
-                # Οτιδήποτε άλλο (π.χ. puzzle, toy) ονομάζεται Puzzle
-                return 'Puzzle (Non-Social)'
+        # --- ΕΚΤΕΛΕΣΗ ΟΛΩΝ ΤΩΝ REPORTS ---
         
-        # Εφαρμογή της κατηγοριοποίησης
-        df['Dwell_Label'] = df[target_col].apply(categorize_labels)
+        # A. Dwell Time & Pie Chart (Social Gaze Index)
+        pie_path, social_index = self._generate_dwell_pie(df, target_col, session_dir, session_name)
         
-        # Υπολογισμός Dwell Time σε δευτερόλεπτα (Frames * 0.02)
-        dwell_times = df['Dwell_Label'].value_counts() * 0.02
+        # B. TTFF Report (Δυναμικό για όλα τα labels)
+        ttff_path = self._generate_ttff_report(df, target_col, session_dir, session_name)
         
-        # Υπολογισμός Social Gaze Index (Biomarker)
-        # Social = Face + Hand / Non-Social = Puzzle (εξαιρούμε το Background από το Engagement)
-        social_val = dwell_times.get('Face (Social)', 0) + dwell_times.get('Hand (Social)', 0)
-        puzzle_val = dwell_times.get('Puzzle (Non-Social)', 0)
-        
-        total_session_time = dwell_times.sum() 
-        social_index = (social_val / total_session_time * 100) if total_session_time > 0 else 0
-        
-        # --- Δημιουργία Pie Chart ---
-        plt.figure(figsize=(10, 8))
-        colors = {
-            'Face (Social)': '#ff9999', 
-            'Hand (Social)': '#ffc0cb', 
-            'Puzzle (Non-Social)': '#66b3ff', 
-            'Background (Non-Social)': '#d3d3d3'
-        }
-        
-        plt.pie(dwell_times, labels=dwell_times.index, autopct='%1.1f%%', 
-                colors=[colors.get(x, '#white') for x in dwell_times.index],
-                startangle=140, wedgeprops={'edgecolor': 'black'})
-        
-        plt.title(f"Dwell Time Analysis: {session_name}\nSocial Gaze Index: {social_index:.1f}%")
-        pie_path = os.path.join(session_dir, "report_pie.png") 
-        plt.savefig(pie_path, dpi=150, bbox_inches='tight') 
-        plt.close()
-        
-
-        def generate_full_ttff_report(self, df, session_dir, session_name):
-        # 1. Καθορισμός της στήλης στόχου (smoothed ή raw)
-        target_col = 'looking_at'
-        
-        # 2. Φιλτράρουμε το Background και κρατάμε μόνο τα αντικείμενα (ROIs)
-        df_objects = df[df[target_col] != 'Background'].copy()
-        
-        if df_objects.empty:
-            print("⚠️ Δεν βρέθηκαν αντικείμενα για υπολογισμό TTFF.")
-            return None
-
-        # 3. Υπολογισμός TTFF για ΟΛΑ τα διαθέσιμα labels
-        # Βρίσκουμε το πρώτο timestamp για κάθε μοναδικό label
-        ttff_data = df_objects.groupby(target_col)['timestamp'].min().sort_values()
-
-        # 4. Σχεδίαση Γραφήματος
-        plt.figure(figsize=(12, 6))
-        sns.set_style("whitegrid")
-        
-        # Χρησιμοποιούμε μια παλέτα που προσαρμόζεται στον αριθμό των labels
-        ax = sns.barplot(
-            x=ttff_data.values, 
-            y=ttff_data.index, 
-            palette="viridis", 
-            hue=ttff_data.index, 
-            legend=False
-        )
-
-        # Προσθήκη labels με το χρόνο πάνω στις μπάρες
-        for i, v in enumerate(ttff_data.values):
-            ax.text(v + 0.05, i, f"{v:.2f}s", va='center', fontweight='bold', color='black')
-
-        plt.title(f"Time to First Fixation (TTFF) per Label\nSession: {session_name}", fontsize=14)
-        plt.xlabel("Time (Seconds from Start)", fontsize=12)
-        plt.ylabel("Detected Labels", fontsize=12)
-        
-        # Δυναμικό όριο στο X για να φαίνονται καθαρά τα νούμερα
-        plt.xlim(0, ttff_data.max() * 1.15)
-        
-        plt.tight_layout()
-        
-        # Αποθήκευση
-        save_path = os.path.join(session_dir, "report_ttff_all.png")
-        plt.savefig(save_path, dpi=150)
-        plt.close()
-        
-        return ttff_data
-        
-        # # --- BAR CHART (Duration) ---
-        # sns.set_style("whitegrid")
-        # plt.figure(figsize=(10, 6))
-        # sns.barplot(x=metrics['Total Duration (sec)'], y=metrics.index, palette='pastel')
-        # plt.title('Total Duration per Object (sec)')
-        
-        # bar_path = os.path.join(session_dir, "report_duration.png")
-        # plt.savefig(bar_path, dpi=150, bbox_inches='tight')
-        # plt.close()
-
-        # # 3. [ΝΕΟ] TTFF (Time to First Fixation)
-        # if not df_obj.empty:
-        #     ttff = df_obj.groupby(target_col)['timestamp'].min().sort_values()
-        #     plt.figure(figsize=(10, 6))
-        #     sns.barplot(x=ttff.values, y=ttff.index, palette='coolwarm')
-        #     plt.title('Time to First Fixation (TTFF) - Ποιο είδε πρώτο;')
-        #     plt.xlabel('Seconds')
-        #     plt.savefig(os.path.join(session_dir, "report_ttff.png"), dpi=150)
-        #     plt.close()
-
-        # # 4. [ΝΕΟ] Pupil Diameter (Cognitive Load)
-        # if 'pupil_diameter' in df.columns:
-        #     df_pupil = df_obj[df_obj['pupil_diameter'] > 1.5].copy()
-        #     if not df_pupil.empty:
-        #         avg_pupil = df_pupil.groupby(target_col)['pupil_diameter'].mean().sort_values(ascending=False)
-        #         plt.figure(figsize=(10, 6))
-        #         sns.barplot(x=avg_pupil.values, y=avg_pupil.index, palette='magma')
-        #         plt.title('Average Pupil Diameter (Cognitive Load)')
-        #         plt.xlabel('Diameter (mm)')
-        #         # Zoom για να φαίνονται οι διαφορές
-        #         plt.xlim(max(0, avg_pupil.min() - 0.2), avg_pupil.max() + 0.1)
-        #         plt.savefig(os.path.join(session_dir, "report_pupil.png"), dpi=150)
-        #         plt.close()
+        # C. Pupil Report (Cognitive Load)
+        pupil_path = self._generate_pupil_report(df, target_col, session_dir, session_name)
 
         return {
             "status": "success",
+            "social_gaze_index": f"{social_index:.1f}%",
             "files": {
-    
-                "pie_chart": pie_path
+                "pie_chart": pie_path,
+                "ttff_chart": ttff_path,
+                "pupil_chart": pupil_path
             }
         }
+
+    def _generate_dwell_pie(self, df, target_col, session_dir, session_name):
+        def categorize_labels(label):
+            l = str(label).lower()
+            if 'face' in l or 'prosopo' in l: return 'Face (Social)'
+            elif 'hand' in l or 'xeri' in l: return 'Hand (Social)'
+            elif 'background' in l: return 'Background (Non-Social)'
+            else: return 'Puzzle (Non-Social)'
+
+        df['Dwell_Label'] = df[target_col].apply(categorize_labels)
+        dwell_times = df['Dwell_Label'].value_counts() * 0.02 # 50Hz
+        
+        social_val = dwell_times.get('Face (Social)', 0) + dwell_times.get('Hand (Social)', 0)
+        social_index = (social_val / dwell_times.sum() * 100) if dwell_times.sum() > 0 else 0
+
+        plt.figure(figsize=(10, 8))
+        colors = {'Face (Social)': '#ff9999', 'Hand (Social)': '#ffc0cb', 'Puzzle (Non-Social)': '#66b3ff', 'Background (Non-Social)': '#d3d3d3'}
+        plt.pie(dwell_times, labels=dwell_times.index, autopct='%1.1f%%', colors=[colors.get(x, '#eee') for x in dwell_times.index], startangle=140, wedgeprops={'edgecolor': 'black'})
+        plt.title(f"Dwell Time: {session_name}\nSocial Gaze Index: {social_index:.1f}%")
+        
+        path = os.path.join(session_dir, "report_pie.png")
+        plt.savefig(path, dpi=150, bbox_inches='tight')
+        plt.close()
+        return path, social_index
+
+    def _generate_ttff_report(self, df, target_col, session_dir, session_name):
+        df_obj = df[df[target_col] != 'Background'].copy()
+        if df_obj.empty: return None
+        
+        ttff_data = df_obj.groupby(target_col)['timestamp'].min().sort_values()
+        plt.figure(figsize=(12, 6))
+        ax = sns.barplot(x=ttff_data.values, y=ttff_data.index, palette="viridis", hue=ttff_data.index, legend=False)
+        for i, v in enumerate(ttff_data.values):
+            ax.text(v + 0.05, i, f"{v:.2f}s", va='center', fontweight='bold')
+        plt.title(f"TTFF per Label: {session_name}")
+        plt.xlim(0, ttff_data.max() * 1.15)
+        
+        path = os.path.join(session_dir, "report_ttff_all.png")
+        plt.savefig(path, dpi=150, bbox_inches='tight')
+        plt.close()
+        return path
+
+    def _generate_pupil_report(self, df, target_col, session_dir, session_name):
+        if 'pupil_diameter' not in df.columns: return None
+        df_pupil = df[(df['pupil_diameter'] > 1.5) & (df[target_col] != 'Background')].copy()
+        if df_pupil.empty: return None
+        
+        avg_pupil = df_pupil.groupby(target_col)['pupil_diameter'].mean().sort_values(ascending=False)
+        plt.figure(figsize=(10, 6))
+        sns.barplot(x=avg_pupil.values, y=avg_pupil.index, palette='magma', hue=avg_pupil.index, legend=False)
+        plt.xlim(avg_pupil.min() - 0.2, avg_pupil.max() + 0.1)
+        plt.title("Mean Pupil Diameter (Cognitive Load)")
+        
+        path = os.path.join(session_dir, "report_pupil.png")
+        plt.savefig(path, dpi=150, bbox_inches='tight')
+        plt.close()
+        return path
