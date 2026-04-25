@@ -126,7 +126,7 @@ class ReportingService:
 
         # 4. Σχεδίαση
         plt.figure(figsize=(10, 6))
-        ax = sns.barplot(x=avg_pupil.values, y=avg_pupil.index, palette='magma')
+        ax = sns.barplot(x=avg_pupil.values, y=avg_pupil.index, palette='viridis')
 
         # ΠΡΟΣΘΗΚΗ ΤΗΣ ΕΥΘΕΙΑΣ (Baseline)
         plt.axvline(overall_mean, color='red', linestyle='--', label=f'Session Mean: {overall_mean:.2f}mm')
