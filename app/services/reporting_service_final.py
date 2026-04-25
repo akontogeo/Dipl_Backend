@@ -45,28 +45,53 @@ class ReportingService:
         }
 
     def _generate_dwell_pie(self, df, target_col, session_dir, session_name):
+        # 1. Δυναμική Κατηγοριοποίηση με Search Logic
         def categorize_labels(label):
             l = str(label).lower()
-            if 'face' in l or 'prosopo' in l: return 'Face (Social)'
-            elif 'hand' in l or 'xeri' in l: return 'Hand (Social)'
-            elif 'background' in l: return 'Background (Non-Social)'
-            else: return 'Puzzle (Non-Social)'
+            # Λογική αναζήτησης μέσα στο string (πιο ευέλικτο)
+            if any(word in l for word in ['face', 'prosopo', 'mati', 'mouth']): 
+                return 'Social'
+            elif any(word in l for word in ['hand', 'xeri', 'arm']): 
+                return 'Hand'
+            elif any(word in l for word in ['background', 'environment', 'wall']): 
+                return 'Background (Non-Social)'
+            else: 
+                return 'Session Objects (Non-Social)'
 
         df['Dwell_Label'] = df[target_col].apply(categorize_labels)
-        dwell_times = df['Dwell_Label'].value_counts() * 0.02 # 50Hz
+        dwell_counts = df['Dwell_Label'].value_counts()
+        dwell_times = dwell_counts * 0.02 # 50Hz
         
+        # Υπολογισμός Social Gaze Index
         social_val = dwell_times.get('Face (Social)', 0) + dwell_times.get('Hand (Social)', 0)
-        social_index = (social_val / dwell_times.sum() * 100) if dwell_times.sum() > 0 else 0
+        total_val = dwell_times.sum()
+        social_index = (social_val / total_val * 100) if total_val > 0 else 0
 
+        # 2. Σχεδίαση με την παλέτα "deep" (ίδια με το Timeline)
         plt.figure(figsize=(10, 8))
-        colors = {'Face (Social)': '#ff9999', 'Hand (Social)': '#ffc0cb', 'Puzzle (Non-Social)': '#66b3ff', 'Background (Non-Social)': '#d3d3d3'}
-        plt.pie(dwell_times, labels=dwell_times.index, autopct='%1.1f%%', colors=[colors.get(x, '#eee') for x in dwell_times.index], startangle=140, wedgeprops={'edgecolor': 'black'})
-        plt.title(f"Dwell Time: {session_name}\nSocial Gaze Index: {social_index:.1f}%")
+        
+        # Παίρνουμε ακριβώς τα χρώματα που χρησιμοποιεί το Seaborn στο Timeline
+        palette_colors = sns.color_palette("deep", len(dwell_times))
+
+        plt.pie(
+            dwell_times, 
+            labels=dwell_times.index, 
+            autopct='%1.1f%%', 
+            colors=palette_colors, 
+            startangle=140, 
+            wedgeprops={'edgecolor': 'white', 'linewidth': 1.5}
+        )
+        
+        plt.title(f"Dwell Time Analysis: {session_name}\nSocial Gaze Index: {social_index:.1f}%", 
+                  fontsize=14, pad=20, fontweight='bold')
         
         path = os.path.join(session_dir, "report_pie.png")
-        plt.savefig(path, dpi=150, bbox_inches='tight')
+        # 300 DPI για να φαίνεται τέλειο στην εκτύπωση της διπλωματικής
+        plt.savefig(path, dpi=300, bbox_inches='tight')
         plt.close()
+        
         return path, social_index
+
 
     def _generate_ttff_report(self, df, target_col, session_dir, session_name):
         df_obj = df[df[target_col] != 'Background'].copy()
@@ -98,7 +123,7 @@ class ReportingService:
         
         # Σχεδίαση Bar Chart (όπως πριν)
         plt.figure(figsize=(12, 6))
-        ax = sns.barplot(x=ttff_data.values, y=ttff_data.index, palette="viridis", hue=ttff_data.index, legend=False)
+        ax = sns.barplot(x=ttff_data.values, y=ttff_data.index, palette="deep", hue=ttff_data.index, legend=False)
         
         for i, v in enumerate(ttff_data.values):
             ax.text(v + 0.05, i, f"{v:.2f}s", va='center', fontweight='bold')
@@ -126,7 +151,7 @@ class ReportingService:
 
         # 4. Σχεδίαση
         plt.figure(figsize=(10, 6))
-        ax = sns.barplot(x=avg_pupil.values, y=avg_pupil.index, palette='viridis')
+        ax = sns.barplot(x=avg_pupil.values, y=avg_pupil.index, palette='deep')
 
         # ΠΡΟΣΘΗΚΗ ΤΗΣ ΕΥΘΕΙΑΣ (Baseline)
         plt.axvline(overall_mean, color='red', linestyle='--', label=f'Session Mean: {overall_mean:.2f}mm')
