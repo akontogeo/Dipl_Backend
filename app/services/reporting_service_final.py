@@ -30,8 +30,11 @@ class ReportingService:
         # C. Pupil Report (Cognitive Load)
         pupil_path = self._generate_pupil_report(df, target_col, session_dir, session_name)
 
-        # D. Fixation Timeline (ΑΥΤΟ ΕΛΕΙΠΕ - Η κλήση της νέας μεθόδου)
+        # D. Fixation Timeline (Εξέλιξη διάρκειας fixations)
         timeline_path = self._generate_fixation_timeline(df, target_col, session_dir, session_name)
+
+        #Ε. Dwell Bar Chart (Συνολικός χρόνος ανά αντικείμενο)
+        dwell_bar_path = self._generate_dwell_bar(df, target_col, session_dir, session_name)
 
         return {
             "status": "success",
@@ -40,7 +43,8 @@ class ReportingService:
                 "pie_chart": pie_path,
                 "ttff_chart": ttff_path,
                 "pupil_chart": pupil_path,
-                "timeline_chart": timeline_path
+                "timeline_chart": timeline_path,
+                "dwell_bar_chart": dwell_bar_path
             }
         }
 
@@ -63,7 +67,7 @@ class ReportingService:
         dwell_times = dwell_counts * 0.02 # 50Hz
         
         # Υπολογισμός Social Gaze Index
-        social_val = dwell_times.get('Face (Social)', 0) + dwell_times.get('Hand (Social)', 0)
+        social_val = dwell_times.get('Social', 0) + dwell_times.get('Hand', 0)
         total_val = dwell_times.sum()
         social_index = (social_val / total_val * 100) if total_val > 0 else 0
 
@@ -137,6 +141,46 @@ class ReportingService:
         plt.close()
         return path
 
+    
+    def _generate_dwell_bar(self, df, target_col, session_dir, session_name):
+        # 1. Υπολογισμός Dwell Time (ίδια λογική με το Pie Chart)
+        # Μετράμε πόσες φορές εμφανίζεται κάθε label (συμπεριλαμβανομένου του Background)
+        # και πολλαπλασιάζουμε με 0.02 (για 50Hz frequency)
+        dwell_data = df[target_col].value_counts() * 0.02
+        
+        # Ταξινόμηση για να φαίνονται πρώτα τα αντικείμενα με τον περισσότερο χρόνο
+        dwell_data = dwell_data.sort_values(ascending=False)
+
+        # 2. Σχεδίαση Bar Chart
+        plt.figure(figsize=(12, 7))
+        
+        # Χρήση της παλέτας "deep" για απόλυτη ομοιομορφία με το Timeline
+        ax = sns.barplot(
+            x=dwell_data.values, 
+            y=dwell_data.index, 
+            palette="deep", 
+            hue=dwell_data.index, 
+            legend=False
+        )
+
+        # 3. Προσθήκη των τιμών δευτερολέπτων στις μπάρες
+        for i, v in enumerate(dwell_data.values):
+            ax.text(v + 0.05, i, f"{v:.2f}s", va='center', fontweight='bold', fontsize=10)
+
+        plt.title(f"Total Dwell Time: {session_name}", fontsize=14, pad=15, fontweight='bold')
+        plt.xlabel("Duration (seconds)", fontsize=12)
+        plt.ylabel("All Recorded Labels", fontsize=12)
+        
+        # Προσθήκη ορίου στον άξονα για να μην "κολλάνε" τα νούμερα στο τέλος
+        plt.xlim(0, dwell_data.max() * 1.2)
+        plt.grid(axis='x', linestyle='--', alpha=0.5)
+
+        # Αποθήκευση σε υψηλή ανάλυση (300 DPI)
+        path = os.path.join(session_dir, "report_dwell_bar.png")
+        plt.savefig(path, dpi=300, bbox_inches='tight')
+        plt.close()
+        
+        return path
     def _generate_pupil_report(self, df, target_col, session_dir, session_name):
         # 1. Φιλτράρουμε τα 0 και τα outliers (όπως είπαμε, το "τίμιο" καθάρισμα)
         df_pupil = df[(df['pupil_diameter'] > 1.5) & (df['pupil_diameter'] < 8.0)].copy()
