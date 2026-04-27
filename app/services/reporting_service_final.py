@@ -67,7 +67,7 @@ class ReportingService:
         dwell_times = dwell_counts * 0.02 # 50Hz
         
         # Υπολογισμός Social Gaze Index
-        social_val = dwell_times.get('Social', 0) + dwell_times.get('Hand', 0)
+        social_val = dwell_times.get('Social', 0)
         total_val = dwell_times.sum()
         social_index = (social_val / total_val * 100) if total_val > 0 else 0
 
@@ -86,7 +86,7 @@ class ReportingService:
             wedgeprops={'edgecolor': 'white', 'linewidth': 1.5}
         )
         
-        plt.title(f"Dwell Time Analysis: {session_name}\nSocial Gaze Index: {social_index:.1f}%", 
+        plt.title(f"Dwell Time Analysis: {session_name}\nSocial Preference Index: {social_index:.1f}%", 
                   fontsize=14, pad=20, fontweight='bold')
         
         path = os.path.join(session_dir, "report_pie.png")
