@@ -36,6 +36,9 @@ class ReportingService:
         #Ε. Dwell Bar Chart (Συνολικός χρόνος ανά αντικείμενο)
         dwell_bar_path = self._generate_dwell_bar(df, target_col, session_dir, session_name)
 
+        # F. Pupil Time Series 
+        pupil_time_path = self._generate_pupil_time_series(df, session_dir, session_name)
+
         return {
             "status": "success",
             "social_gaze_index": f"{social_index:.1f}%",
@@ -44,7 +47,9 @@ class ReportingService:
                 "ttff_chart": ttff_path,
                 "pupil_chart": pupil_path,
                 "timeline_chart": timeline_path,
-                "dwell_bar_chart": dwell_bar_path
+                "dwell_bar_chart": dwell_bar_path,
+                "pupil_time_chart": pupil_time_path
+                
             }
         }
 
@@ -211,6 +216,43 @@ class ReportingService:
         plt.savefig(path, dpi=150, bbox_inches='tight')
         plt.close()
         return path
+        
+    def _generate_pupil_time_series(self, df, session_dir, session_name):
+        # 1. Καθαρισμός δεδομένων (όπως και στο άλλο pupil report)
+        df_pupil = df[(df['pupil_diameter'] > 1.5) & (df['pupil_diameter'] < 8.0)].copy()
+        
+        if df_pupil.empty: return None
+
+        # 2. Υπολογισμός Κινητού Μέσου Όρου (Smoothing)
+        # Χρησιμοποιούμε παράθυρο 25 δειγμάτων (0.5 δευτερόλεπτο στα 50Hz)
+        df_pupil['pupil_smooth'] = df_pupil['pupil_diameter'].rolling(window=25, center=True).mean()
+
+        # 3. Σχεδίαση
+        plt.figure(figsize=(14, 6))
+        
+        # Σχεδιάζουμε το αρχικό σήμα με χαμηλό opacity και το smooth σήμα από πάνω
+        plt.plot(df_pupil['timestamp'], df_pupil['pupil_diameter'], 
+                 alpha=0.2, color='#34495e', label='Raw Data')
+        plt.plot(df_pupil['timestamp'], df_pupil['pupil_smooth'], 
+                 color='#e74c3c', linewidth=2, label='Moving Average (0.5s)')
+
+        # Προσθήκη Baseline (Μέσος όρος session)
+        overall_mean = df_pupil['pupil_diameter'].mean()
+        plt.axhline(overall_mean, color='black', linestyle='--', alpha=0.6, 
+                    label=f'Session Mean ({overall_mean:.2f}mm)')
+
+        plt.title(f"Pupil Diameter Over Time: {session_name}", fontsize=14, pad=15, fontweight='bold')
+        plt.xlabel("Time (seconds)", fontsize=12)
+        plt.ylabel("Pupil Diameter (mm)", fontsize=12)
+        plt.legend(loc='upper right')
+        plt.grid(True, linestyle=':', alpha=0.5)
+
+        path = os.path.join(session_dir, "report_pupil_timeline.png")
+        plt.savefig(path, dpi=300, bbox_inches='tight')
+        plt.close()
+        
+        return path
+        
     def _generate_fixation_timeline(self, df, target_col, session_dir, session_name):
         df_obj = df[df[target_col] != 'Background'].copy()
         if df_obj.empty: return None
