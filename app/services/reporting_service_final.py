@@ -30,8 +30,9 @@ class ReportingService:
         # C. Pupil Report (Cognitive Load)
         pupil_path = self._generate_pupil_report(df, target_col, session_dir, session_name)
 
-        # D. Fixation Timeline (Εξέλιξη διάρκειας fixations)
+        # D. Fixation Reports
         timeline_path = self._generate_fixation_timeline(df, target_col, session_dir, session_name)
+        mean_fix_path = self._generate_mean_fixation_report(df, target_col, session_dir, session_name)
 
         #Ε. Dwell Bar Chart (Συνολικός χρόνος ανά αντικείμενο)
         dwell_bar_path = self._generate_dwell_bar(df, target_col, session_dir, session_name)
@@ -39,6 +40,7 @@ class ReportingService:
         # F. Pupil Time Series 
         pupil_time_path = self._generate_pupil_time_series(df, session_dir, session_name)
 
+        
         return {
             "status": "success",
             "social_gaze_index": f"{social_index:.1f}%",
@@ -48,7 +50,8 @@ class ReportingService:
                 "pupil_chart": pupil_path,
                 "timeline_chart": timeline_path,
                 "dwell_bar_chart": dwell_bar_path,
-                "pupil_time_chart": pupil_time_path
+                "pupil_time_chart": pupil_time_path,
+                "mean_fixation": mean_fix_path
                 
             }
         }
@@ -248,6 +251,59 @@ class ReportingService:
         plt.grid(True, linestyle=':', alpha=0.5)
 
         path = os.path.join(session_dir, "report_pupil_timeline.png")
+        plt.savefig(path, dpi=300, bbox_inches='tight')
+        plt.close()
+        
+        return path
+    def _generate_mean_fixation_report(self, df, target_col, session_dir, session_name):
+        # 1. Φιλτράρισμα Background
+        df_obj = df[df[target_col] != 'Background'].copy()
+        if df_obj.empty: return None
+
+        all_fixations = []
+        
+        # 2. Εξαγωγή Fixations (όπως στο timeline)
+        for label in df_obj[target_col].unique():
+            label_mask = (df_obj[target_col] == label).astype(int)
+            blocks = (label_mask != label_mask.shift()).cumsum()
+            
+            group = df_obj[label_mask == 1].groupby(blocks)
+            for _, g in group:
+                duration = len(g) * 0.02
+                if duration >= 0.1: # Threshold 100ms για να θεωρηθεί fixation
+                    all_fixations.append({
+                        'label': label,
+                        'duration': duration
+                    })
+
+        if not all_fixations: return None
+        fix_df = pd.DataFrame(all_fixations)
+
+        # 3. Υπολογισμός Μέσου Όρου ανά Label
+        mean_fix = fix_df.groupby('label')['duration'].mean().sort_values(ascending=False)
+
+        # 4. Σχεδίαση
+        plt.figure(figsize=(12, 6))
+        ax = sns.barplot(
+            x=mean_fix.values, 
+            y=mean_fix.index, 
+            palette="deep", 
+            hue=mean_fix.index, 
+            legend=False
+        )
+
+        # Προσθήκη τιμών στις μπάρες
+        for i, v in enumerate(mean_fix.values):
+            ax.text(v + 0.01, i, f"{v:.3f}s", va='center', fontweight='bold')
+
+        plt.title(f"Mean Fixation Duration per Object: {session_name}\n(Threshold > 100ms)", fontsize=14, pad=15)
+        plt.xlabel("Average Duration (seconds)", fontsize=12)
+        plt.ylabel("Objects", fontsize=12)
+        
+        plt.xlim(0, mean_fix.max() * 1.2)
+        plt.grid(axis='x', linestyle='--', alpha=0.6)
+
+        path = os.path.join(session_dir, "report_mean_fixation.png")
         plt.savefig(path, dpi=300, bbox_inches='tight')
         plt.close()
         
