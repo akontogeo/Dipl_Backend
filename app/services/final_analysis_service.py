@@ -138,9 +138,9 @@ class FinalAnalysisService:
                 "ttff_chart": f"outputs/sessions/{session_name}/report_ttff_scientific.png",
                 "pupil_chart": f"outputs/sessions/{session_name}/report_pupil.png",
                 "timeline_chart": f"outputs/sessions/{session_name}/report_fixation_timeline.png",
-                "dwell_bar_chart": f"outputs/sessions/{session_name}/dwell_bar_chart.png", # Βεβαιώσου για τα ονόματα
-                "pupil_time_chart": f"outputs/sessions/{session_name}/pupil_time_chart.png",
-                "mean_fixation": f"outputs/sessions/{session_name}/mean_fixation.png"
+                "dwell_bar_chart": f"outputs/sessions/{session_name}/report_dwell_bar.png", # Βεβαιώσου για τα ονόματα
+                "pupil_time_chart": f"outputs/sessions/{session_name}/report_pupil_timeline.png",
+                "mean_fixation": f"outputs/sessions/{session_name}/report_mean_fixation.png"
             }
             # --- SYNC ΣΤΟ DRIVE ---
             print("🔄 Συγχρονισμός τελικών αποτελεσμάτων (Video & Excel) με το Drive...")
