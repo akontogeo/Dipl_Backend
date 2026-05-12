@@ -35,8 +35,8 @@ async def process_gaze(session_name: str, file: UploadFile = File(...)):
     os.makedirs(session_output_dir, exist_ok=True)
     
     # 1. Αποθήκευση του αρχείου .txt που ανέβασε ο χρήστης στο session folder
-    input_path = os.path.join(session_upload_dir, file.filename)
-    output_filename = f"processed_{file.filename.replace('.txt', '.csv')}"
+    base_name = os.path.splitext(file.filename)[0] 
+    output_filename = f"processed_{base_name}.csv"
     output_path = os.path.join(session_output_dir, output_filename)
 
     with open(input_path, "wb") as buffer:
