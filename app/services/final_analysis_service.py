@@ -33,7 +33,7 @@ class FinalAnalysisService:
             fps = cap.get(cv2.CAP_PROP_FPS) or 25
             total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
 
-            fourcc = cv2.VideoWriter_fourcc(*'H264')
+            fourcc = cv2.VideoWriter_fourcc(*'mp4v')
             out = cv2.VideoWriter(output_video, fourcc, fps, (width, height))
 
             # --- INDEXING ---
@@ -96,7 +96,7 @@ class FinalAnalysisService:
 
             cap.release()
             out.release()
-
+            cv2.destroyAllWindows()
             # --- ΕΞΤΡΑ ΒΗΜΑ: TEMPORAL SMOOTHING ---
             analysis_progress[analysis_id]["message"] = "Εφαρμογή Smoothing στα αποτελέσματα..."
             
