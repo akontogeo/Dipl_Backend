@@ -122,11 +122,25 @@ class FinalAnalysisService:
             reporting = ReportingService()
             reporting.generate_session_report(session_name) # όπου session_name το όνομα της συνεδρίας
 
+            relative_video_path = output_video.split('outputs/')[-1]
+            relative_video_path = f"outputs/{relative_video_path}"
+            
+            relative_excel_path = output_excel.split('outputs/')[-1]
+            relative_excel_path = f"outputs/{relative_excel_path}"
+            
             analysis_progress[analysis_id] = {
                 "status": "completed", 
                 "percentage": 100, 
-                "video_file": output_video, 
-                "excel_file": output_excel
+                "video_file": relative_video_path,  # <--- ΤΩΡΑ ΕΙΝΑΙ ΣΧΕΤΙΚΟ
+                "excel_file": relative_excel_path,
+                # Προσθέτουμε και τα κλειδιά για τα charts για να τα βλέπει η TypeScript
+                "pie_chart": f"outputs/sessions/{session_name}/report_pie.png",
+                "ttff_chart": f"outputs/sessions/{session_name}/report_ttff_scientific.png",
+                "pupil_chart": f"outputs/sessions/{session_name}/report_pupil.png",
+                "timeline_chart": f"outputs/sessions/{session_name}/report_fixation_timeline.png",
+                "dwell_bar_chart": f"outputs/sessions/{session_name}/dwell_bar_chart.png", # Βεβαιώσου για τα ονόματα
+                "pupil_time_chart": f"outputs/sessions/{session_name}/pupil_time_chart.png",
+                "mean_fixation": f"outputs/sessions/{session_name}/mean_fixation.png"
             }
             # --- SYNC ΣΤΟ DRIVE ---
             print("🔄 Συγχρονισμός τελικών αποτελεσμάτων (Video & Excel) με το Drive...")
