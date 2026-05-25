@@ -96,7 +96,7 @@ class FinalAnalysisService:
 
             cap.release()
             out.release()
-            cv2.destroyAllWindows()
+            
             # --- ΕΞΤΡΑ ΒΗΜΑ: TEMPORAL SMOOTHING ---
             analysis_progress[analysis_id]["message"] = "Εφαρμογή Smoothing στα αποτελέσματα..."
             
