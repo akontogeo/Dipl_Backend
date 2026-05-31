@@ -24,19 +24,20 @@ class InferenceService:
             model = YOLO(model_path)
 
             # 3. Εκτέλεση Tracking (imgsz=1024 για υψηλή ακρίβεια)
-            results_list = model.track(
+            results_generator = model.track(
                 source=video_path,
                 persist=True,
                 tracker="bytetrack.yaml",
                 imgsz=1024,
                 conf=0.3,
                 iou=0.5,
-                verbose=False
+                verbose=False,
+                stream=True
             )
 
             all_data = []
 
-            for i, result in enumerate(results_list):
+            for i, result in enumerate(results_generator):
                 timestamp = i / fps
                 if result.boxes and result.boxes.id is not None:
                     boxes = result.boxes.xyxyn.cpu().numpy()
@@ -50,17 +51,27 @@ class InferenceService:
                         
                         # Προσθήκη στη λίστα
                         all_data.append([i, f"{timestamp:.3f}", name, int(track_id), x1, y1, x2, y2])
-
+                if i % 300 == 0:
+                    gc.collect()
             # 4. ΚΑΘΑΡΙΣΜΟΣ ΜΕ PANDAS (Το βήμα που ήθελες)
-            df = pd.DataFrame(all_data, columns=['frame_index', 'timestamp', 'object_name', 'track_id', 'x_min', 'y_min', 'x_max', 'y_max'])
-            
-            # Φίλτρο: Κράτα μόνο όσα IDs εμφανίζονται σε τουλάχιστον 5 frames (ghost filtering)
-            id_counts = df['track_id'].value_counts()
-            valid_ids = id_counts[id_counts >= 5].index
-            df_clean = df[df['track_id'].isin(valid_ids)].copy()
+            if all_data:
+                df = pd.DataFrame(all_data, columns=['frame_index', 'timestamp', 'object_name', 'track_id', 'x_min', 'y_min', 'x_max', 'y_max'])
+                
+                # Φίλτρο: Ghost filtering
+                id_counts = df['track_id'].value_counts()
+                valid_ids = id_counts[id_counts >= 5].index
+                df_clean = df[df['track_id'].isin(valid_ids)].copy()
 
-            # 5. Αποθήκευση του Καθαρού CSV
-            df_clean.to_csv(output_csv, index=False)
+                # 5. Αποθήκευση του Καθαρού CSV
+                df_clean.to_csv(output_csv, index=False)
+                removed_ghosts = len(id_counts) - len(valid_ids)
+
+            else:
+                # Αν δεν βρέθηκε τίποτα απολύτως στο βίντεο
+                df = pd.DataFrame(columns=['frame_index', 'timestamp', 'object_name', 'track_id', 'x_min', 'y_min', 'x_max', 'y_max'])
+                df.to_csv(output_csv, index=False)
+                removed_ghosts = 0
+                
             print(f"🔄 Ανεβάζω το αποτέλεσμα του tracking στο Drive...")
             sync_data_to_drive()
                
