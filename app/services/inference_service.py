@@ -69,7 +69,7 @@ class InferenceService:
 
                 # 5. Αποθήκευση του Καθαρού CSV
                 df_clean.to_csv(output_csv, index=False)
-                removed_ghosts = len(id_counts) - len(valid_ids)
+                removed_ghosts = int(len(id_counts) - len(valid_ids))
             else:
                 # Αν δεν βρέθηκε τίποτα απολύτως στο βίντεο
                 df = pd.DataFrame(columns=['frame_index', 'timestamp', 'object_name', 'track_id', 'x_min', 'y_min', 'x_max', 'y_max'])
