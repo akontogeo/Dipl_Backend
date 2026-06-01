@@ -107,9 +107,9 @@ class FinalAnalysisService:
                 # Update progress κάθε 50 frames (ΕΞΩ από τα ifs για να δουλεύει ΠΑΝΤΑ)
                 if frame_idx % 50 == 0 or frame_idx == total_frames - 1:
                     pct = int((frame_idx / total_frames) * 100)
-                    analysis_progress[analysis_id] = {"status": "processing", "percentage": pct}
+                    analysis_progress[analysis_id] = {"status": "processing", "percentage":int(pct)}
                     # Προαιρετικό print για να βλέπεις τι γίνεται στα logs του Colab
-                    print(f"⏳ Progress: {pct}% (Frame {frame_idx}/{total_frames})")
+                    print(f"⏳ Progress: {int(pct)}% (Frame {frame_idx}/{total_frames})")
 
             cap.release()
             out.release()
