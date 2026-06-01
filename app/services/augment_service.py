@@ -19,7 +19,7 @@ class AugmentService:
             A.RandomBrightnessContrast(brightness_limit=0.25, contrast_limit=0.2, p=0.5), # Brightness ±25%
             A.Blur(blur_limit=3, p=0.3), # 1.5px blur αντιστοιχεί περίπου σε limit 3
             A.GaussNoise(std_range=(0.01, 0.05), p=0.3) # Noise up to 0.1%
-        ], bbox_params=A.BboxParams(format='yolo', label_fields=['class_labels']))
+        ], bbox_params=A.BboxParams(format='yolo', label_fields=['class_labels'],clip=True))
 
     def augment_dataset(self, dataset_path, multiplier=3):
         train_path = os.path.join(dataset_path, "train")
@@ -55,7 +55,8 @@ class AugmentService:
                     if len(parts) == 5:
                             try:
                                 # Τα bboxes πρέπει να είναι ακριβώς 4 floats
-                                coords = [float(x) for x in parts[1:5]]
+                                raw_coords = [float(x) for x in parts[1:5]]
+                                coords = [max(0.0, min(1.0, coord)) for coord in raw_coords]
                                 bboxes.append(coords)
                                 class_labels.append(int(parts[0]))
                             except ValueError:
@@ -68,20 +69,24 @@ class AugmentService:
             # 3. Δημιουργία των 3 (multiplier) παραλλαγών
             num_new_images = multiplier - 1
             for i in range(num_new_images):
-                augmented = self.transform(image=image, bboxes=bboxes, class_labels=class_labels)
-                aug_img = augmented['image']
-                aug_bboxes = augmented['bboxes']
-
-                # Αποθήκευση νέας εικόνας
-                new_img_name = f"{base_name}_aug_{i}.jpg"
-                new_img_path = os.path.join(images_path, new_img_name)
-                is_success, buffer = cv2.imencode(".jpg", cv2.cvtColor(aug_img, cv2.COLOR_RGB2BGR))
-                if is_success:
-                    with open(new_img_path, "wb") as f:
-                        f.write(buffer)
-                
-                # Αποθήκευση νέου label
-                new_label_name = f"{base_name}_aug_{i}.txt"
-                with open(os.path.join(labels_path, new_label_name), 'w') as f:
-                    for idx, bbox in enumerate(aug_bboxes):
-                        f.write(f"{class_labels[idx]} {' '.join([str(x) for x in bbox])}\n")
+                try:
+                    augmented = self.transform(image=image, bboxes=bboxes, class_labels=class_labels)
+                    aug_img = augmented['image']
+                    aug_bboxes = augmented['bboxes']
+    
+                    # Αποθήκευση νέας εικόνας
+                    new_img_name = f"{base_name}_aug_{i}.jpg"
+                    new_img_path = os.path.join(images_path, new_img_name)
+                    is_success, buffer = cv2.imencode(".jpg", cv2.cvtColor(aug_img, cv2.COLOR_RGB2BGR))
+                    if is_success:
+                        with open(new_img_path, "wb") as f:
+                            f.write(buffer)
+                    
+                    # Αποθήκευση νέου label
+                    new_label_name = f"{base_name}_aug_{i}.txt"
+                    with open(os.path.join(labels_path, new_label_name), 'w') as f:
+                        for idx, bbox in enumerate(aug_bboxes):
+                            f.write(f"{class_labels[idx]} {' '.join([str(x) for x in bbox])}\n")
+                except Exception as e:
+                    print(f"Σφάλμα κατά το augmentation της εικόνας {img_path}: {e}")
+                    continue
